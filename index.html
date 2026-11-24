@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сервис Мастер — калькулятор ремонта</title>
+<style>
+:root{
+  --bg:#f3f5fa; --card:#fff; --line:#e6e9f2; --text:#141a2b; --muted:#6b7389;
+  --blue:#2350e6; --blue-soft:#eaf0ff; --green:#119c55; --green-dark:#0c8146;
+  --red:#e0384c; --dark:#121726; --radius:16px;
+  --shadow:0 1px 2px rgba(20,26,43,.04),0 6px 24px rgba(20,26,43,.06);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font-family:"Segoe UI",Inter,system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.4}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input,select{font:inherit;color:inherit}
+svg{width:18px;height:18px;flex:none}
+[dir=rtl] .flip svg,[dir=rtl] svg.flip{transform:scaleX(-1)}
+
+/* header */
+header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.head{display:flex;align-items:center;gap:12px;padding:14px 20px;max-width:1240px;margin:0 auto}
+.logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#3a66ff,#1a3fd0);display:grid;place-items:center;color:#fff;box-shadow:0 4px 12px rgba(35,80,230,.35);flex:none}
+.logo svg{width:24px;height:24px}
+.brandname{min-width:0}
+.brandname b{font-size:19px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brandname span{color:var(--muted);font-size:13px}
+.head .sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;font-weight:600;transition:.15s;white-space:nowrap}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:var(--green-dark)}
+.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{filter:brightness(1.08)}
+.btn-ghost{background:var(--bg);border:1px solid var(--line)}.btn-ghost:hover{background:#e9ecf4}
+.btn-red{background:var(--red);color:#fff}
+.btn-edit{background:#fff;border:1.5px solid var(--line);color:var(--muted)}
+.btn-edit.on{background:#fff4e8;border-color:#f6c08a;color:#c4610a}
+.btn-lang{background:#fff;border:1.5px solid var(--line);padding:9px 14px}
+.btn-lang:hover{border-color:#c9d2ea}
+.icon-btn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;border:1px solid var(--line);background:#fff;color:var(--muted)}
+.icon-btn:hover{color:var(--text);background:var(--bg)}
+.edit-only{display:none!important}
+body.editing .edit-only{display:inline-flex!important}
+body.public .owner-only{display:none!important}
+
+/* layout */
+main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;padding:22px 20px 40px;max-width:1240px;margin:0 auto;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.toolbar{display:flex;gap:12px;padding:14px}
+.search{flex:1;display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:0 14px;color:var(--muted)}
+.search input{flex:1;min-width:0;border:0;background:none;outline:none;padding:11px 0;color:var(--text)}
+.search:focus-within{border-color:var(--blue);background:#fff}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.tab{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:12px;background:#fff;border:1px solid var(--line);font-weight:600;color:#3b4358}
+.tab:hover{border-color:#c9d2ea}
+.tab.active{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 4px 12px rgba(35,80,230,.3)}
+.tab .cnt{font-size:12px;opacity:.65;font-weight:500}
+.tab-add{border-style:dashed;color:var(--blue)}
+.models{padding:18px}
+.models-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.models-head h2{font-size:17px;margin:0;display:flex;align-items:center;gap:8px}
+.models-head h2 svg{color:var(--blue)}
+.pill{margin-inline-start:auto;background:var(--bg);border-radius:20px;padding:4px 12px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.model{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:#fff;text-align:start;transition:.15s}
+.model:hover{border-color:#b9c6ef;transform:translateY(-1px)}
+.model.active{border-color:var(--blue);background:var(--blue-soft)}
+.model .ph{width:36px;height:36px;border-radius:10px;background:var(--bg);display:grid;place-items:center;color:var(--muted)}
+.model.active .ph{background:var(--blue);color:#fff}
+.model .t{flex:1;min-width:0}
+.model small{display:block;color:var(--muted);font-size:12px}
+.model b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.model .arr{color:#aab2c6}
+.brand-acts{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px}
+.empty{padding:40px 10px;text-align:center;color:var(--muted)}
+.empty svg{width:42px;height:42px;opacity:.4;display:block;margin:0 auto 10px}
+
+/* detail */
+.detail{position:sticky;top:94px;padding:20px}
+.d-head{display:flex;align-items:flex-start;gap:10px}
+.d-head .k{color:var(--blue);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase}
+.d-head h3{margin:2px 0 0;font-size:24px}
+.d-head .sp{flex:1}
+.mini{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--muted)}
+.mini:hover{background:var(--bg);color:var(--text)}
+.mini.del:hover{color:var(--red);background:#fdecee}
+.mini svg{width:17px;height:17px}
+.sec-title{display:flex;align-items:center;margin:22px 0 10px;font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.sec-title .sp{flex:1}
+.link{color:var(--blue);font-weight:600;text-transform:none;letter-spacing:0;font-size:14px;display:inline-flex;align-items:center;gap:4px}
+.link svg{width:15px;height:15px}
+.services{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto;padding-inline-end:2px}
+.svc{display:flex;align-items:center;gap:12px;padding:12px;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;user-select:none;transition:.12s}
+.svc:hover{border-color:#c9d2ea}
+.svc.on{border-color:var(--green);background:#ecf9f1}
+.chk{width:22px;height:22px;border-radius:7px;border:2px solid #c3cad9;display:grid;place-items:center;flex:none;transition:.12s;background:#fff}
+.svc.on .chk{background:var(--green);border-color:var(--green);color:#fff}
+.chk svg{width:14px;height:14px;opacity:0}
+.svc.on .chk svg{opacity:1}
+.svc .n{flex:1;font-weight:600}
+.svc .n small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.svc .p{font-weight:700;white-space:nowrap}
+.svc .acts{display:flex;gap:2px}
+.total{margin-top:18px;background:var(--dark);color:#fff;border-radius:14px;padding:16px 18px}
+.total .r1{display:flex;align-items:center;font-size:13px;color:#a4adc4}
+.total .r1 .sp{flex:1}
+.total .r1 button{color:#8fb0ff;text-decoration:underline;font-size:13px}
+.total .r2{display:flex;align-items:baseline;gap:10px;margin-top:8px}
+.total .r2 .lbl{flex:1;color:#d7dcea}
+.total .sum{font-size:32px;font-weight:800;color:#33d17a;white-space:nowrap}
+.total .old{color:#8b93a8;text-decoration:line-through;font-size:15px;white-space:nowrap}
+.disc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:#a4adc4}
+.disc input{width:70px;background:#232a3d;border:1px solid #343c53;border-radius:8px;color:#fff;padding:5px 8px;text-align:center}
+.disc .sp{flex:1}
+.copy{color:#8fb0ff;display:inline-flex;align-items:center;gap:5px}
+.copy svg{width:15px;height:15px}
+.placeholder{text-align:center;color:var(--muted);padding:50px 20px}
+.placeholder svg{width:52px;height:52px;opacity:.35;display:block;margin:0 auto 12px}
+.foot{max-width:1240px;margin:0 auto;padding:0 20px 30px;color:var(--muted);font-size:12.5px;text-align:center}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(12,16,28,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;backdrop-filter:blur(3px)}
+.overlay.show{display:flex}
+.modal{background:#fff;border-radius:18px;width:100%;max-width:460px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:92vh;overflow:auto}
+.modal h4{margin:0 0 16px;font-size:19px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.field input,.field select{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;outline:none;background:#fff}
+.field input:focus,.field select:focus{border-color:var(--blue)}
+.field .chkline{display:flex;gap:8px;align-items:center;font-weight:500;color:var(--text)}
+.field .chkline input{width:auto}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal .btns{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+.modal p{color:var(--muted);margin:0 0 16px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--dark);color:#fff;padding:12px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:60;font-weight:600;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.menu{position:relative}
+.dropdown{position:absolute;inset-inline-end:0;top:46px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.14);padding:6px;min-width:270px;display:none;z-index:30}
+.dropdown.show{display:block}
+.dropdown button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:9px;text-align:start}
+.dropdown button:hover{background:var(--bg)}
+.dropdown button.danger{color:var(--red)}
+.dropdown hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+
+@media (max-width:900px){
+  main{grid-template-columns:minmax(0,1fr)}
+  .detail{position:static}
+  .services{max-height:none}
+}
+@media (max-width:600px){
+  .head{padding:12px 14px;gap:8px}
+  .brandname span{display:none}
+  .brandname b{font-size:17px}
+  .btn-edit .lbl{display:none}
+  .btn-edit{padding:10px 12px}
+  .btn-lang{padding:9px 10px}
+  main{padding:16px}
+  .toolbar{flex-direction:column}
+  .grid{grid-template-columns:1fr}
+  .row2{grid-template-columns:1fr}
+}
+@media print{
+  header,.left,.svc:not(.on),.acts,.link,.d-head .mini,.total .r1 button,.disc,.foot{display:none!important}
+  main{display:block}.detail{position:static;box-shadow:none;border:0}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+    <div class="brandname"><b id="shopName">Сервис Мастер</b><span data-i18n="subtitle">Прайс-лист и калькулятор ремонта</span></div>
+    <div class="sp"></div>
+    <button class="btn btn-lang" id="langBtn" title="Язык / שפה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span id="langLbl">עברית</span></button>
+    <button class="icon-btn" id="loginBtn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>
+    <button class="btn btn-edit owner-only" id="editToggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="lbl" id="editLbl"></span></button>
+    <div class="menu owner-only">
+      <button class="icon-btn" id="menuBtn" title="Меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+      <div class="dropdown" id="dropdown">
+        <button data-act="site" id="siteItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span data-i18n="m_site"></span></button>
+        <hr id="siteHr">
+        <button data-act="export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg><span data-i18n="m_export"></span></button>
+        <button data-act="import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg><span data-i18n="m_import"></span></button>
+        <button data-act="rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span data-i18n="m_rename"></span></button>
+        <hr>
+        <button data-act="reset" class="danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span data-i18n="m_reset"></span></button>
+        <button data-act="logout" id="logoutItem" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span data-i18n="logout"></span></button>
+      </div>
+    </div>
+    <input type="file" id="fileIn" accept=".json,application/json" hidden>
+  </div>
+</header>
+
+<main>
+  <section class="left">
+    <div class="card toolbar">
+      <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="q" data-i18n-ph="search_ph" autocomplete="off"></label>
+      <button class="btn btn-green edit-only" id="addModel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="add_model"></span></button>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="card models">
+      <div class="models-head">
+        <h2 id="modelsTitle"></h2>
+        <span class="pill" id="modelsCount"></span>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </section>
+
+  <aside class="card detail" id="detail"></aside>
+</main>
+<div class="foot" data-i18n="foot"></div>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- Прайс, встроенный в опубликованный сайт. Заполняется кнопкой «Скачать сайт для публикации». -->
+<script type="application/json" id="price-data">null</script>
+
+<script>
+/* ================= ПЕРЕВОДЫ ================= */
+const L = {
+ ru:{
+  subtitle:'Прайс-лист и калькулятор ремонта', title_suffix:'калькулятор ремонта', other_lang:'עברית',
+  edit_on:'Режим редактора (ВКЛ)', edit_off:'Режим редактора (ВЫКЛ)', menu:'Меню',
+  m_site:'Скачать сайт для публикации', m_export:'Сохранить прайс в файл (JSON)', m_import:'Загрузить прайс из файла', m_rename:'Название мастерской', m_reset:'Сбросить к заводскому прайсу',
+  search_ph:'Поиск модели (например, iPhone 13, Galaxy S22)…', add_model:'Добавить модель', brand_btn:'Бренд',
+  search_results:'Результаты поиска', models_of:'Модели ',
+  count:n=>{const a=n%10,b=n%100;return n+' '+(a===1&&b!==11?'модель':(a>=2&&a<=4&&(b<10||b>=20)?'модели':'моделей'));},
+  ren_brand:'Переименовать бренд', del_brand:'Удалить бренд',
+  nothing:q=>`Ничего не найдено по запросу «${q}»`, no_models:'В этом бренде пока нет моделей.',
+  hint_add:'Нажмите «Добавить модель».', hint_editor:'Включите режим редактора, чтобы добавить.',
+  choose:'Выберите модель', choose_sub:'чтобы увидеть услуги и рассчитать стоимость ремонта',
+  edit_model:'Изменить модель', del_model:'Удалить модель', services:'Услуги и стоимость', add_svc:'Добавить услугу',
+  edit:'Изменить', del:'Удалить', no_svc:'Услуг пока нет.', picked:'Выбрано услуг: ', clear:'Сбросить выбор',
+  total:'Итоговая цена:', discount:'Скидка, %', copy:'Копировать', print:'Печать',
+  cancel:'Отмена', save:'Сохранить', add:'Добавить',
+  new_model:'Новая модель', brand:'Бренд', model_name:'Название модели', model_ph:'например, Galaxy S25',
+  copy_from:'Скопировать список услуг из', empty_list:'— пустой список —',
+  model_saved:'Модель сохранена', model_added:'Модель добавлена',
+  new_svc:'Новая услуга', edit_svc:'Изменить услугу', svc_ru:'Название по-русски', svc_he:'Название на иврите',
+  svc_ph_ru:'например, Замена динамика', svc_ph_he:'например, החלפת רמקול', price:'Цена, ₪',
+  note_ru:'Примечание по-русски', note_he:'Примечание на иврите', optional:'необязательно',
+  add_all:b=>`Добавить во все модели бренда ${b}`, saved:'Сохранено', need_brand:'Сначала добавьте бренд',
+  new_brand:'Новый бренд', name:'Название', brand_ph:'например, OnePlus',
+  del_brand_q:'Удалить бренд?', del_brand_t:(b,n)=>`Бренд «${b}» и все его модели (${n}) будут удалены.`,
+  del_model_q:'Удалить модель?', del_model_t:m=>`«${m}» и её прайс будут удалены.`, model_deleted:'Модель удалена',
+  del_svc_q:'Удалить услугу?', del_svc_t:(s,m)=>`«${s}» будет удалена из прайса ${m}.`,
+  pick_first:'Сначала отметьте услуги', copied:'Расчёт скопирован', copy_fail:'Не удалось скопировать',
+  total_line:'Итого: ', discount_line:'Скидка ',
+  exported:'Файл прайса сохранён', shop_ru:'Название по-русски', shop_he:'Название на иврите',
+  reset_q:'Сбросить прайс?', reset_t:'Все ваши изменения будут удалены и вернётся прайс по умолчанию. Совет: сначала сохраните прайс в файл.', reset_b:'Сбросить', reset_done:'Прайс сброшен',
+  imported:'Прайс загружен', bad_file:'Файл не подходит: это не прайс', save_fail:'Не удалось сохранить (память браузера недоступна)',
+  site_q:'Сайт для клиентов', site_t:'Скачается файл index.html с вашими текущими ценами. Загрузите его на хостинг вместо старого — клиенты увидят новые цены. У клиентов режим редактора скрыт.', site_b:'Скачать index.html', site_done:'Файл сайта скачан',
+  login:'Вход для мастера', password:'Пароль', login_b:'Войти', login_ok:'Вы вошли. Изменения сразу видны клиентам', login_bad:'Неверный пароль', login_wait:'Слишком много попыток. Подождите 5 минут', no_server:'Нет связи с сервером',
+  logout:'Выйти из редактора', logged_out:'Вы вышли', saved_web:'Сохранено на сайте ✓', push_fail:'Не удалось сохранить на сайте. Проверьте интернет', auth_lost:'Вход истёк, войдите снова',
+  foot:'Цены указаны в шекелях (₪). Точную стоимость уточняйте у мастера.'
+ },
+ he:{
+  subtitle:'מחירון ומחשבון תיקונים', title_suffix:'מחשבון תיקונים', other_lang:'Русский',
+  edit_on:'מצב עריכה (פעיל)', edit_off:'מצב עריכה (כבוי)', menu:'תפריט',
+  m_site:'הורדת האתר לפרסום', m_export:'שמירת המחירון לקובץ (JSON)', m_import:'טעינת מחירון מקובץ', m_rename:'שם המעבדה', m_reset:'איפוס למחירון ברירת המחדל',
+  search_ph:'חיפוש דגם, למשל iPhone 13 או Galaxy S22', add_model:'הוספת דגם', brand_btn:'מותג',
+  search_results:'תוצאות חיפוש', models_of:'דגמי ',
+  count:n=>n===1?'דגם אחד':n+' דגמים',
+  ren_brand:'שינוי שם המותג', del_brand:'מחיקת המותג',
+  nothing:q=>`לא נמצאו תוצאות עבור „${q}”`, no_models:'אין עדיין דגמים במותג זה.',
+  hint_add:'לחצו על „הוספת דגם”.', hint_editor:'הפעילו את מצב העריכה כדי להוסיף.',
+  choose:'בחרו דגם', choose_sub:'כדי לראות את השירותים ולחשב את מחיר התיקון',
+  edit_model:'עריכת דגם', del_model:'מחיקת דגם', services:'שירותים ומחירים', add_svc:'הוספת שירות',
+  edit:'עריכה', del:'מחיקה', no_svc:'אין עדיין שירותים.', picked:'שירותים שנבחרו: ', clear:'ניקוי הבחירה',
+  total:'מחיר סופי:', discount:'הנחה, %', copy:'העתקה', print:'הדפסה',
+  cancel:'ביטול', save:'שמירה', add:'הוספה',
+  new_model:'דגם חדש', brand:'מותג', model_name:'שם הדגם', model_ph:'למשל Galaxy S25',
+  copy_from:'העתקת רשימת השירותים מדגם', empty_list:'— רשימה ריקה —',
+  model_saved:'הדגם נשמר', model_added:'הדגם נוסף',
+  new_svc:'שירות חדש', edit_svc:'עריכת שירות', svc_ru:'שם ברוסית', svc_he:'שם בעברית',
+  svc_ph_ru:'например, Замена динамика', svc_ph_he:'למשל, החלפת רמקול', price:'מחיר, ₪',
+  note_ru:'הערה ברוסית', note_he:'הערה בעברית', optional:'לא חובה',
+  add_all:b=>`הוספה לכל הדגמים של ${b}`, saved:'נשמר', need_brand:'הוסיפו קודם מותג',
+  new_brand:'מותג חדש', name:'שם', brand_ph:'למשל OnePlus',
+  del_brand_q:'למחוק את המותג?', del_brand_t:(b,n)=>`המותג „${b}” וכל הדגמים שלו (${n}) יימחקו.`,
+  del_model_q:'למחוק את הדגם?', del_model_t:m=>`„${m}” והמחירון שלו יימחקו.`, model_deleted:'הדגם נמחק',
+  del_svc_q:'למחוק את השירות?', del_svc_t:(s,m)=>`„${s}” יימחק מהמחירון של ${m}.`,
+  pick_first:'סמנו קודם שירותים', copied:'ההצעה הועתקה', copy_fail:'ההעתקה נכשלה',
+  total_line:'סה"כ: ', discount_line:'הנחה ',
+  exported:'קובץ המחירון נשמר', shop_ru:'שם ברוסית', shop_he:'שם בעברית',
+  reset_q:'לאפס את המחירון?', reset_t:'כל השינויים שלכם יימחקו והמחירון יחזור לברירת המחדל. מומלץ לשמור קודם את המחירון לקובץ.', reset_b:'איפוס', reset_done:'המחירון אופס',
+  imported:'המחירון נטען', bad_file:'הקובץ אינו מחירון תקין', save_fail:'השמירה נכשלה (זיכרון הדפדפן אינו זמין)',
+  site_q:'אתר ללקוחות', site_t:'יורד קובץ index.html עם המחירים הנוכחיים. העלו אותו לאחסון במקום הישן, והלקוחות יראו את המחירים החדשים. מצב העריכה מוסתר אצל הלקוחות.', site_b:'הורדת index.html', site_done:'קובץ האתר הורד',
+  login:'כניסת טכנאי', password:'סיסמה', login_b:'כניסה', login_ok:'נכנסתם. השינויים גלויים ללקוחות מיד', login_bad:'סיסמה שגויה', login_wait:'יותר מדי ניסיונות. המתינו 5 דקות', no_server:'אין חיבור לשרת',
+  logout:'יציאה מהעריכה', logged_out:'יצאתם', saved_web:'נשמר באתר ✓', push_fail:'השמירה באתר נכשלה. בדקו את החיבור', auth_lost:'פג תוקף הכניסה, היכנסו שוב',
+  foot:'המחירים בשקלים (₪). את המחיר המדויק יש לברר מול הטכנאי.'
+ }
+};
+
+/* стандартные услуги: русский → иврит */
+const SVC_HE = {
+  'Замена экрана (дисплей)':'החלפת מסך',
+  'Замена аккумулятора':'החלפת סוללה',
+  'Замена разъёма зарядки':'החלפת שקע טעינה',
+  'Замена заднего стекла':'החלפת זכוכית אחורית',
+  'Замена основной камеры':'החלפת מצלמה ראשית',
+  'Чистка после попадания влаги':'ניקוי לאחר חדירת נוזלים',
+  'Защитное стекло + установка':'מגן מסך + התקנה',
+  'диагностика + ультразвуковая чистка':'אבחון + ניקוי אולטרסוני'
+};
+
+/* ================= ИКОНКИ ================= */
+const I = {
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>',
+  arr:'<svg class="flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  del:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+  print:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg>',
+  tool:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
+};
+
+/* ================= ДАННЫЕ ПО УМОЛЧАНИЮ ================= */
+const uid = () => Math.random().toString(36).slice(2, 10);
+function S(list){ return list.map(([name, price, note]) => ({id: uid(), name, name_he: SVC_HE[name] || '', price, note: note || '', note_he: SVC_HE[note] || ''})); }
+
+function defaults(){
+  const brands = [
+    {id:'apple',name:'Apple'},{id:'samsung',name:'Samsung'},{id:'xiaomi',name:'Xiaomi'},
+    {id:'google',name:'Google Pixel'},{id:'huawei',name:'Huawei / Honor'}
+  ];
+  // [модель, экран, аккумулятор, разъём, заднее стекло, камера]
+  const table = {
+    apple:[
+      ['iPhone 11',350,200,180,250,250],['iPhone 11 Pro',450,220,200,280,300],['iPhone 12',500,220,200,280,300],
+      ['iPhone 12 Pro Max',650,250,220,300,380],['iPhone 13',550,250,220,300,350],['iPhone 13 Pro',800,270,230,320,420],
+      ['iPhone 14',650,270,230,350,380],['iPhone 14 Pro Max',1100,300,250,400,500],['iPhone 15',800,300,250,400,420],
+      ['iPhone 15 Pro Max',1300,330,280,450,550],['iPhone 16',950,330,280,450,480],['iPhone 16 Pro Max',1500,350,300,500,600]
+    ],
+    samsung:[
+      ['Galaxy A14',250,160,130,120,150],['Galaxy A34',380,180,150,150,200],['Galaxy A54',450,200,160,180,220],
+      ['Galaxy A55',480,200,160,180,230],['Galaxy S22',500,220,180,220,300],['Galaxy S23',650,240,200,250,330],
+      ['Galaxy S23 Ultra',1000,280,220,300,450],['Galaxy S24',750,260,220,280,350],['Galaxy S24 Ultra',1200,300,250,350,500]
+    ],
+    xiaomi:[
+      ['Redmi 13C',200,140,110,100,120],['Redmi Note 12',300,160,130,120,160],['Redmi Note 13',320,170,140,130,170],
+      ['Redmi Note 13 Pro',450,190,150,160,220],['Poco X6 Pro',450,190,150,160,220],['Xiaomi 13T',550,220,180,200,280],['Xiaomi 14',750,250,200,250,350]
+    ],
+    google:[
+      ['Pixel 7',550,230,200,250,300],['Pixel 7 Pro',800,260,220,280,380],['Pixel 8',650,250,210,270,330],['Pixel 8 Pro',950,280,230,300,420]
+    ],
+    huawei:[
+      ['Huawei P30',400,180,150,170,220],['Huawei P40',500,200,160,190,250],['Honor 90',450,190,150,170,230],['Honor X8',300,160,130,130,170]
+    ]
+  };
+  const models = [];
+  for (const b in table) for (const [name, scr, bat, port, back, cam] of table[b]) {
+    models.push({id: uid(), brandId: b, name, services: S([
+      ['Замена экрана (дисплей)', scr],
+      ['Замена аккумулятора', bat],
+      ['Замена разъёма зарядки', port],
+      ['Замена заднего стекла', back],
+      ['Замена основной камеры', cam],
+      ['Чистка после попадания влаги', 150, 'диагностика + ультразвуковая чистка'],
+      ['Защитное стекло + установка', 50]
+    ])});
+  }
+  return {shopName:'Сервис Мастер', shopName_he:'סרוויס מאסטר', brands, models};
+}
+
+/* ================= РЕЖИМ И ХРАНЕНИЕ ================= */
+// Открыт с интернета (http/https) — это сайт для клиентов: только просмотр, цены из файла.
+// Открыт с компьютера (file://) или с ?admin — режим владельца с редактором.
+const params = new URLSearchParams(location.search);
+// На сайте (http/https) клиент видит только прайс; мастер входит по паролю (кнопка с замком).
+// Открыт с компьютера (file://) — локальный режим, прайс хранится в браузере.
+const IS_WEB = /^https?:$/.test(location.protocol);
+const KEY = 'servis-master-v1';
+const ls = {
+  get(k){ try { return localStorage.getItem(k); } catch(e) { return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); return true; } catch(e) { return false; } }
+};
+let auth = '';
+const isPublic = () => IS_WEB && !auth;
+let EMBED = null;
+try { EMBED = JSON.parse(document.getElementById('price-data').textContent); } catch(e) {}
+
+const valid = d => d && Array.isArray(d.brands) && Array.isArray(d.models);
+let db = null;
+if (!IS_WEB) { try { db = JSON.parse(ls.get(KEY)); } catch(e) {} }
+if (!valid(db)) db = valid(EMBED) ? JSON.parse(JSON.stringify(EMBED)) : defaults();
+normalize(db);
+
+function normalize(d){
+  if (!d.shopName) d.shopName = 'Сервис Мастер';
+  if (d.shopName_he === undefined) d.shopName_he = d.shopName === 'Сервис Мастер' ? 'סרוויס מאסטר' : '';
+  d.models.forEach(m => {
+    m.id = m.id || uid();
+    m.services = (m.services || []).map(s => ({
+      id: s.id || uid(), name: String(s.name || ''), name_he: s.name_he || SVC_HE[s.name] || '',
+      price: Number(s.price) || 0, note: s.note || '', note_he: s.note_he || SVC_HE[s.note] || ''
+    }));
+  });
+}
+function save(){
+  if (!IS_WEB) { if (!ls.set(KEY, JSON.stringify(db))) toast(t('save_fail')); return; }
+  if (!auth) return;
+  clearTimeout(pushT); pushT = setTimeout(pushPrices, 500);
+}
+let pushT;
+async function pushPrices(){
+  try {
+    const r = await fetch('api/prices', {method: 'PUT', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth}, body: JSON.stringify(db)});
+    if (r.status === 401) { setAuth(''); render(); return toast(t('auth_lost')); }
+    if (!r.ok) throw 0;
+    toast(t('saved_web'));
+  } catch(e) { toast(t('push_fail')); }
+}
+function setAuth(tok){ auth = tok; ls.set(KEY + '-token', tok); if (!tok) st.editing = false; }
+
+let lang = params.get('lang') === 'he' || params.get('lang') === 'ru' ? params.get('lang') : (ls.get(KEY + '-lang') || 'ru');
+if (!L[lang]) lang = 'ru';
+if (IS_WEB) auth = ls.get(KEY + '-token') || '';
+const st = { brand: db.brands[0]?.id, model: null, q: '', picked: new Set(), discount: 0, editing: !isPublic() && ls.get(KEY + '-edit') === '1' };
+
+/* ================= УТИЛИТЫ ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const t = (k, ...a) => { const v = L[lang][k] ?? L.ru[k]; return typeof v === 'function' ? v(...a) : v; };
+const money = n => Number(n || 0).toLocaleString(lang === 'he' ? 'he-IL' : 'ru-RU') + ' ₪';
+const brandName = id => db.brands.find(b => b.id === id)?.name || '';
+const svcName = s => lang === 'he' ? (s.name_he || s.name) : (s.name || s.name_he);
+const svcNote = s => lang === 'he' ? (s.note_he || s.note) : (s.note || s.note_he);
+const shopName = () => (lang === 'he' ? (db.shopName_he || db.shopName) : (db.shopName || db.shopName_he)) || 'Сервис Мастер';
+let toastT;
+function toast(msg){ const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
+
+/* ================= ОТРИСОВКА ================= */
+function render(){
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+  document.body.classList.toggle('public', isPublic());
+  document.body.classList.toggle('editing', st.editing);
+  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  $('#langLbl').textContent = t('other_lang');
+  $('#loginBtn').hidden = !isPublic(); $('#loginBtn').title = t('login');
+  $('#logoutItem').hidden = !(IS_WEB && auth);
+  $('#siteItem').hidden = $('#siteHr').hidden = IS_WEB;
+  $('#menuBtn').title = t('menu');
+  $('#editToggle').classList.toggle('on', st.editing);
+  $('#editLbl').textContent = st.editing ? t('edit_on') : t('edit_off');
+  $('#editToggle').title = $('#editLbl').textContent;
+  $('#shopName').textContent = shopName();
+  document.title = shopName() + ' — ' + t('title_suffix');
+  renderTabs(); renderGrid(); renderDetail();
+}
+
+function renderTabs(){
+  const searching = st.q.trim() !== '';
+  let h = db.brands.map(b => {
+    const n = db.models.filter(m => m.brandId === b.id).length;
+    return `<button class="tab ${!searching && b.id === st.brand ? 'active' : ''}" data-brand="${b.id}">${I.phone}${esc(b.name)} <span class="cnt">${n}</span></button>`;
+  }).join('');
+  h += `<button class="tab tab-add edit-only" id="addBrand">${I.plus}${t('brand_btn')}</button>`;
+  $('#tabs').innerHTML = h;
+}
+
+function visibleModels(){
+  const q = st.q.trim().toLowerCase();
+  if (q) { const qn = q.replace(/\s/g, ''); return db.models.filter(m => (brandName(m.brandId) + ' ' + m.name).toLowerCase().includes(q) || m.name.toLowerCase().replace(/\s/g, '').includes(qn)); }
+  return db.models.filter(m => m.brandId === st.brand);
+}
+
+function renderGrid(){
+  const list = visibleModels();
+  const q = st.q.trim();
+  const b = db.brands.find(x => x.id === st.brand);
+  $('#modelsTitle').innerHTML = I.phone + (q ? t('search_results') : t('models_of') + esc(b ? b.name : ''));
+  $('#modelsCount').textContent = t('count', list.length);
+  let extra = '';
+  if (!q && b && st.editing) extra = `<div class="brand-acts">
+      <button class="btn btn-ghost" id="renBrand">${I.edit}${t('ren_brand')}</button>
+      <button class="btn btn-ghost" id="delBrand" style="color:var(--red)">${I.del}${t('del_brand')}</button></div>`;
+  if (!list.length) {
+    const hint = st.editing ? t('hint_add') : (isPublic() ? '' : t('hint_editor'));
+    $('#grid').innerHTML = `<div class="empty" style="grid-column:1/-1">${I.search}${q ? esc(t('nothing', q)) : t('no_models') + (hint ? '<br>' + hint : '')}</div>` + extra;
+    return;
+  }
+  $('#grid').innerHTML = list.map(m => `
+    <button class="model ${m.id === st.model ? 'active' : ''}" data-model="${m.id}">
+      <span class="ph">${I.phone}</span>
+      <span class="t"><small>${esc(brandName(m.brandId))}</small><b>${esc(m.name)}</b></span>
+      <span class="arr">${I.arr}</span>
+    </button>`).join('') + extra;
+}
+
+function totals(m){
+  const sum = m.services.filter(s => st.picked.has(s.id)).reduce((a, s) => a + Number(s.price || 0), 0);
+  const d = Math.min(100, Math.max(0, Number(st.discount) || 0));
+  return {sum, d, final: Math.round(sum * (100 - d) / 100)};
+}
+
+function renderDetail(){
+  const m = db.models.find(x => x.id === st.model);
+  const el = $('#detail');
+  if (!m) { el.innerHTML = `<div class="placeholder">${I.tool}<b style="color:var(--text);font-size:17px">${t('choose')}</b><br>${t('choose_sub')}</div>`; return; }
+  const {sum, d, final} = totals(m);
+  el.innerHTML = `
+    <div class="d-head">
+      <div><div class="k">${esc(brandName(m.brandId))}</div><h3>${esc(m.name)}</h3></div>
+      <div class="sp"></div>
+      <button class="mini edit-only" id="editModel" title="${t('edit_model')}">${I.edit}</button>
+      <button class="mini del edit-only" id="delModel" title="${t('del_model')}">${I.del}</button>
+    </div>
+    <div class="sec-title">${t('services')}<span class="sp"></span><button class="link edit-only" id="addSvc">${I.plus}${t('add_svc')}</button></div>
+    <div class="services">
+      ${m.services.length ? m.services.map(s => `
+        <div class="svc ${st.picked.has(s.id) ? 'on' : ''}" data-svc="${s.id}">
+          <span class="chk">${I.check}</span>
+          <span class="n">${esc(svcName(s))}${svcNote(s) ? `<small>${esc(svcNote(s))}</small>` : ''}</span>
+          <span class="p">${money(s.price)}</span>
+          <span class="acts edit-only"><button class="mini" data-edsvc="${s.id}" title="${t('edit')}">${I.edit}</button><button class="mini del" data-delsvc="${s.id}" title="${t('del')}">${I.del}</button></span>
+        </div>`).join('') : `<div class="empty">${t('no_svc')}${st.editing || isPublic() ? '' : '<br>' + t('hint_editor')}</div>`}
+    </div>
+    <div class="total">
+      <div class="r1">${t('picked')}${st.picked.size}<span class="sp"></span><button id="clearPick">${t('clear')}</button></div>
+      <div class="r2"><span class="lbl">${t('total')}</span>${d && sum ? `<span class="old">${money(sum)}</span>` : ''}<b class="sum">${money(final)}</b></div>
+      <div class="disc"><span class="owner-only">${t('discount')}</span><input class="owner-only" type="number" min="0" max="100" id="disc" value="${d || ''}" placeholder="0"><span class="sp"></span>
+        <button class="copy" id="copyQuote">${I.copy}${t('copy')}</button>
+        <button class="copy" id="printQuote">${I.print}${t('print')}</button></div>
+    </div>`;
+}
+
+/* ================= МОДАЛЬНЫЕ ОКНА ================= */
+function modal(html, onSubmit){
+  $('#modal').innerHTML = html;
+  $('#overlay').classList.add('show');
+  const f = $('#modal form');
+  const first = $('#modal input:not([type=checkbox]), #modal select');
+  if (first) setTimeout(() => { first.focus(); first.select && first.select(); }, 30);
+  f.onsubmit = e => { e.preventDefault(); const data = Object.fromEntries(new FormData(f)); if (onSubmit(data) !== false) closeModal(); };
+  $('#modal [data-cancel]').onclick = closeModal;
+}
+function closeModal(){ $('#overlay').classList.remove('show'); }
+$('#overlay').addEventListener('mousedown', e => { if (e.target.id === 'overlay') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); $('#dropdown').classList.remove('show'); } });
+
+const btns = (ok, cls = 'btn-blue') => `<div class="btns"><button type="button" class="btn btn-ghost" data-cancel>${t('cancel')}</button><button class="btn ${cls}">${ok}</button></div>`;
+const field = (label, input) => `<div class="field"><label>${label}</label>${input}</div>`;
+function confirmBox(title, text, ok, fn){ modal(`<form><h4>${title}</h4><p>${text}</p>${btns(ok, 'btn-red')}</form>`, () => { fn(); }); }
+
+function modelForm(m){
+  const brandOpts = db.brands.map(b => `<option value="${b.id}" ${(m ? m.brandId : st.brand) === b.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
+  const copyOpts = db.models.map(x => `<option value="${x.id}" ${x.id === st.model ? 'selected' : ''}>${esc(brandName(x.brandId) + ' ' + x.name)}</option>`).join('');
+  modal(`<form><h4>${m ? t('edit_model') : t('new_model')}</h4>
+    ${field(t('brand'), `<select name="brand">${brandOpts}</select>`)}
+    ${field(t('model_name'), `<input name="name" dir="ltr" required value="${m ? esc(m.name) : ''}" placeholder="${t('model_ph')}">`)}
+    ${m ? '' : field(t('copy_from'), `<select name="copy"><option value="">${t('empty_list')}</option>${copyOpts}</select>`)}
+    ${btns(m ? t('save') : t('add'))}</form>`, d => {
+      const name = d.name.trim(); if (!name) return false;
+      if (m) { m.name = name; m.brandId = d.brand; }
+      else {
+        const src = db.models.find(x => x.id === d.copy);
+        const nm = {id: uid(), brandId: d.brand, name, services: src ? src.services.map(s => ({...s, id: uid()})) : []};
+        db.models.push(nm); st.model = nm.id; st.picked.clear();
+      }
+      st.brand = d.brand; st.q = ''; $('#q').value = '';
+      save(); render(); toast(m ? t('model_saved') : t('model_added'));
+    });
+}
+
+function svcForm(m, s){
+  const ru = lang === 'ru';
+  const fRu = field(t('svc_ru'), `<input name="name" dir="ltr" ${ru ? 'required' : ''} value="${s ? esc(s.name) : ''}" placeholder="${t('svc_ph_ru')}">`);
+  const fHe = field(t('svc_he'), `<input name="name_he" dir="rtl" ${ru ? '' : 'required'} value="${s ? esc(s.name_he || '') : ''}" placeholder="${t('svc_ph_he')}">`);
+  const nRu = field(`${t('note_ru')} (${t('optional')})`, `<input name="note" dir="ltr" value="${s ? esc(s.note || '') : ''}">`);
+  const nHe = field(`${t('note_he')} (${t('optional')})`, `<input name="note_he" dir="rtl" value="${s ? esc(s.note_he || '') : ''}">`);
+  modal(`<form><h4>${s ? t('edit_svc') : t('new_svc')}</h4>
+    ${ru ? fRu + fHe : fHe + fRu}
+    ${field(t('price'), `<input name="price" type="number" min="0" step="1" required value="${s ? s.price : ''}">`)}
+    <div class="row2">${ru ? nRu + nHe : nHe + nRu}</div>
+    ${!s ? `<div class="field"><label class="chkline"><input type="checkbox" name="all"> ${esc(t('add_all', brandName(m.brandId)))}</label></div>` : ''}
+    ${btns(s ? t('save') : t('add'))}</form>`, d => {
+      const name = d.name.trim(), name_he = d.name_he.trim();
+      if (!name && !name_he) return false;
+      const data = {name: name || name_he, name_he, price: Math.max(0, Number(d.price) || 0), note: d.note.trim(), note_he: d.note_he.trim()};
+      if (s) Object.assign(s, data);
+      else (d.all ? db.models.filter(x => x.brandId === m.brandId) : [m]).forEach(x => x.services.push({id: uid(), ...data}));
+      save(); renderDetail(); toast(t('saved'));
+    });
+}
+
+/* ================= СОБЫТИЯ ================= */
+$('#langBtn').onclick = () => { lang = lang === 'ru' ? 'he' : 'ru'; ls.set(KEY + '-lang', lang); render(); };
+$('#loginBtn').onclick = () => modal(`<form><h4>${t('login')}</h4>${field(t('password'), `<input name="password" type="password" required autocomplete="current-password">`)}${btns(t('login_b'))}</form>`, d => { login(d.password); return false; });
+async function login(pw){
+  try {
+    const r = await fetch('api/login', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({password: pw})});
+    if (r.ok) { setAuth((await r.json()).token); st.editing = true; ls.set(KEY + '-edit', '1'); closeModal(); render(); toast(t('login_ok')); }
+    else toast(t(r.status === 429 ? 'login_wait' : (r.status === 401 ? 'login_bad' : 'no_server')));
+  } catch(e) { toast(t('no_server')); }
+}
+$('#editToggle').onclick = () => { st.editing = !st.editing; ls.set(KEY + '-edit', st.editing ? '1' : '0'); render(); };
+$('#q').oninput = e => { st.q = e.target.value; renderTabs(); renderGrid(); };
+$('#addModel').onclick = () => { if (!db.brands.length) return toast(t('need_brand')); modelForm(null); };
+
+$('#tabs').onclick = e => {
+  if (e.target.closest('#addBrand')) {
+    return modal(`<form><h4>${t('new_brand')}</h4>${field(t('name'), `<input name="name" dir="ltr" required placeholder="${t('brand_ph')}">`)}${btns(t('add'))}</form>`, d => {
+      const name = d.name.trim(); if (!name) return false;
+      const b = {id: uid(), name}; db.brands.push(b); st.brand = b.id; save(); render();
+    });
+  }
+  const el = e.target.closest('[data-brand]'); if (!el) return;
+  st.brand = el.dataset.brand; st.q = ''; $('#q').value = ''; renderTabs(); renderGrid();
+};
+
+$('#grid').onclick = e => {
+  const b = db.brands.find(x => x.id === st.brand);
+  if (e.target.closest('#renBrand')) return modal(`<form><h4>${t('ren_brand')}</h4>${field(t('name'), `<input name="name" dir="ltr" required value="${esc(b.name)}">`)}${btns(t('save'))}</form>`, d => { b.name = d.name.trim() || b.name; save(); render(); });
+  if (e.target.closest('#delBrand')) {
+    const n = db.models.filter(m => m.brandId === b.id).length;
+    return confirmBox(t('del_brand_q'), esc(t('del_brand_t', b.name, n)), t('del'), () => {
+      db.models = db.models.filter(m => m.brandId !== b.id); db.brands = db.brands.filter(x => x !== b);
+      if (db.models.every(m => m.id !== st.model)) { st.model = null; st.picked.clear(); }
+      st.brand = db.brands[0]?.id; save(); render();
+    });
+  }
+  const el = e.target.closest('[data-model]'); if (!el) return;
+  if (st.model !== el.dataset.model) { st.model = el.dataset.model; st.picked.clear(); st.discount = 0; }
+  renderGrid(); renderDetail();
+  if (window.innerWidth <= 900) $('#detail').scrollIntoView({behavior: 'smooth'});
+};
+
+$('#detail').addEventListener('click', e => {
+  const m = db.models.find(x => x.id === st.model); if (!m) return;
+  let el;
+  if (e.target.closest('#editModel')) return modelForm(m);
+  if (e.target.closest('#delModel')) return confirmBox(t('del_model_q'), esc(t('del_model_t', brandName(m.brandId) + ' ' + m.name)), t('del'), () => {
+    db.models = db.models.filter(x => x !== m); st.model = null; st.picked.clear(); save(); render(); toast(t('model_deleted'));
+  });
+  if (e.target.closest('#addSvc')) return svcForm(m, null);
+  if (el = e.target.closest('[data-edsvc]')) return svcForm(m, m.services.find(s => s.id === el.dataset.edsvc));
+  if (el = e.target.closest('[data-delsvc]')) {
+    const s = m.services.find(x => x.id === el.dataset.delsvc);
+    return confirmBox(t('del_svc_q'), esc(t('del_svc_t', svcName(s), m.name)), t('del'), () => {
+      m.services = m.services.filter(x => x !== s); st.picked.delete(s.id); save(); renderDetail();
+    });
+  }
+  if (e.target.closest('#clearPick')) { st.picked.clear(); st.discount = 0; return renderDetail(); }
+  if (e.target.closest('#copyQuote')) return copyQuote(m);
+  if (e.target.closest('#printQuote')) return window.print();
+  if (e.target.closest('#disc')) return;
+  if (el = e.target.closest('[data-svc]')) { const id = el.dataset.svc; st.picked.has(id) ? st.picked.delete(id) : st.picked.add(id); renderDetail(); }
+});
+$('#detail').addEventListener('change', e => { if (e.target.id === 'disc') { st.discount = e.target.value; renderDetail(); } });
+
+function copyQuote(m){
+  const sel = m.services.filter(s => st.picked.has(s.id));
+  if (!sel.length) return toast(t('pick_first'));
+  const {d, final} = totals(m);
+  let txt = `${shopName()}\n${brandName(m.brandId)} ${m.name}\n\n` + sel.map(s => `• ${svcName(s)} — ${money(s.price)}`).join('\n');
+  if (d) txt += `\n\n${t('discount_line')}${d}%`;
+  txt += `\n${t('total_line')}${money(final)}`;
+  const done = () => toast(t('copied'));
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(done, () => fallbackCopy(txt, done));
+  else fallbackCopy(txt, done);
+}
+function fallbackCopy(txt, done){
+  const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch(e) { toast(t('copy_fail')); }
+  ta.remove();
+}
+
+function download(name, text, type){
+  const blob = new Blob([text], {type});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+
+// Собирает копию этой страницы с текущими ценами внутри — для загрузки на хостинг
+function buildSite(){
+  const root = document.documentElement.cloneNode(true);
+  root.setAttribute('lang', 'ru'); root.removeAttribute('dir');
+  root.querySelector('body').removeAttribute('class');
+  root.querySelector('#price-data').textContent = JSON.stringify(db).replace(/</g, '\\u003c');
+  ['#tabs', '#grid', '#detail', '#modal', '#modelsTitle', '#modelsCount', '#toast'].forEach(s => { const n = root.querySelector(s); if (n) n.innerHTML = ''; });
+  root.querySelector('#overlay').classList.remove('show');
+  root.querySelector('#toast').classList.remove('show');
+  root.querySelector('#dropdown').classList.remove('show');
+  root.querySelector('#q').removeAttribute('value');
+  return '<!DOCTYPE html>\n' + root.outerHTML;
+}
+
+$('#menuBtn').onclick = e => { e.stopPropagation(); $('#dropdown').classList.toggle('show'); };
+document.addEventListener('click', () => $('#dropdown').classList.remove('show'));
+$('#dropdown').onclick = e => {
+  const a = e.target.closest('[data-act]')?.dataset.act; if (!a) return;
+  if (a === 'site') confirmBox(t('site_q'), t('site_t'), t('site_b'), () => { download('index.html', buildSite(), 'text/html'); toast(t('site_done')); });
+  if (a === 'logout') { fetch('api/logout', {method: 'POST', headers: {'Authorization': 'Bearer ' + auth}}).catch(() => {}); setAuth(''); render(); return toast(t('logged_out')); }
+  if (a === 'export') { download('prais-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(db, null, 2), 'application/json'); toast(t('exported')); }
+  if (a === 'import') $('#fileIn').click();
+  if (a === 'rename') modal(`<form><h4>${t('m_rename')}</h4>
+      ${field(t('shop_ru'), `<input name="name" dir="ltr" required value="${esc(db.shopName || '')}">`)}
+      ${field(t('shop_he'), `<input name="name_he" dir="rtl" value="${esc(db.shopName_he || '')}">`)}
+      ${btns(t('save'))}</form>`, d => { db.shopName = d.name.trim() || db.shopName; db.shopName_he = d.name_he.trim(); save(); render(); });
+  if (a === 'reset') confirmBox(t('reset_q'), t('reset_t'), t('reset_b'), () => {
+    db = defaults(); st.brand = db.brands[0].id; st.model = null; st.picked.clear(); save(); render(); toast(t('reset_done'));
+  });
+};
+$('#fileIn').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!valid(d)) throw 0;
+      normalize(d); db = d; st.brand = db.brands[0]?.id; st.model = null; st.picked.clear(); save(); render(); toast(t('imported'));
+    } catch(err) { toast(t('bad_file')); }
+  };
+  r.readAsText(f); e.target.value = '';
+};
+
+render();
+
+// На сайте берём свежий прайс с сервера (его сохраняет мастер после входа)
+if (IS_WEB) {
+  fetch('prices.json', {cache: 'no-store'}).then(r => r.ok ? r.json() : null).then(d => {
+    if (!valid(d)) return;
+    normalize(d); db = d;
+    if (!db.brands.some(b => b.id === st.brand)) st.brand = db.brands[0]?.id;
+    if (!db.models.some(m => m.id === st.model)) { st.model = null; st.picked.clear(); }
+    render();
+  }).catch(() => {});
+  if (auth) fetch('api/check', {method: 'POST', headers: {'Authorization': 'Bearer ' + auth}}).then(r => { if (r.status === 401) { setAuth(''); render(); } }).catch(() => {});
+}
+</script>
+</body>
+</html>
