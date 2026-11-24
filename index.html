@@ -101,6 +101,14 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;padding:22p
 .svc .n{flex:1;font-weight:600}
 .svc .n small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
 .svc .p{font-weight:700;white-space:nowrap}
+.tiers{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tier{font-size:12.5px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-weight:600;color:#3b4358;white-space:nowrap}
+.tier small{display:inline!important;opacity:.7;font-weight:500;margin-inline-start:4px;font-size:12px;color:inherit!important}
+.tier:hover{border-color:var(--green)}
+.tier.on{border-color:var(--green);color:var(--green)}
+.svc.on .tier.on{background:var(--green);color:#fff}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.hint{font-size:12.5px;color:var(--muted);margin:-6px 0 14px}
 .svc .acts{display:flex;gap:2px}
 .total{margin-top:18px;background:var(--dark);color:#fff;border-radius:14px;padding:16px 18px}
 .total .r1{display:flex;align-items:center;font-size:13px;color:#a4adc4}
@@ -159,7 +167,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;padding:22p
   main{padding:16px}
   .toolbar{flex-direction:column}
   .grid{grid-template-columns:1fr}
-  .row2{grid-template-columns:1fr}
+  .row2,.row3{grid-template-columns:1fr}
 }
 @media print{
   header,.left,.svc:not(.on),.acts,.link,.d-head .mini,.total .r1 button,.disc,.foot{display:none!important}
@@ -257,6 +265,8 @@ const L = {
   site_q:'Сайт для клиентов', site_t:'Скачается файл index.html с вашими текущими ценами. Загрузите его на хостинг вместо старого — клиенты увидят новые цены. У клиентов режим редактора скрыт.', site_b:'Скачать index.html', site_done:'Файл сайта скачан',
   login:'Вход для мастера', password:'Пароль', login_b:'Войти', login_ok:'Вы вошли. Изменения сразу видны клиентам', login_bad:'Неверный пароль', login_wait:'Слишком много попыток. Подождите 5 минут', no_server:'Нет связи с сервером',
   logout:'Выйти из редактора', logged_out:'Вы вышли', saved_web:'Сохранено на сайте ✓', push_fail:'Не удалось сохранить на сайте. Проверьте интернет', auth_lost:'Вход истёк, войдите снова',
+  tier_std:'Обычное', tier_prem:'Премиум', tier_orig:'Оригинальное',
+  price_std:'Цена (обычное), ₪', price_prem:'Премиум, ₪', price_orig:'Оригинальное, ₪', tiers_hint:'Премиум и оригинальное заполнять не обязательно. Если заполнить, клиент сможет выбрать качество.',
   foot:'Цены указаны в шекелях (₪). Точную стоимость уточняйте у мастера.'
  },
  he:{
@@ -293,6 +303,8 @@ const L = {
   site_q:'אתר ללקוחות', site_t:'יורד קובץ index.html עם המחירים הנוכחיים. העלו אותו לאחסון במקום הישן, והלקוחות יראו את המחירים החדשים. מצב העריכה מוסתר אצל הלקוחות.', site_b:'הורדת index.html', site_done:'קובץ האתר הורד',
   login:'כניסת טכנאי', password:'סיסמה', login_b:'כניסה', login_ok:'נכנסתם. השינויים גלויים ללקוחות מיד', login_bad:'סיסמה שגויה', login_wait:'יותר מדי ניסיונות. המתינו 5 דקות', no_server:'אין חיבור לשרת',
   logout:'יציאה מהעריכה', logged_out:'יצאתם', saved_web:'נשמר באתר ✓', push_fail:'השמירה באתר נכשלה. בדקו את החיבור', auth_lost:'פג תוקף הכניסה, היכנסו שוב',
+  tier_std:'רגיל', tier_prem:'פרימיום', tier_orig:'מקורי',
+  price_std:'מחיר (רגיל), ₪', price_prem:'פרימיום, ₪', price_orig:'מקורי, ₪', tiers_hint:'פרימיום ומקורי אינם חובה. אם ימולאו, הלקוח יוכל לבחור איכות.',
   foot:'המחירים בשקלים (₪). את המחיר המדויק יש לברר מול הטכנאי.'
  }
 };
@@ -325,7 +337,10 @@ const I = {
 
 /* ================= ДАННЫЕ ПО УМОЛЧАНИЮ ================= */
 const uid = () => Math.random().toString(36).slice(2, 10);
-function S(list){ return list.map(([name, price, note]) => ({id: uid(), name, name_he: SVC_HE[name] || '', price, note: note || '', note_he: SVC_HE[note] || ''})); }
+const SCREEN = 'Замена экрана (дисплей)';
+const r10 = n => Math.round(n / 10) * 10;
+const screenTiers = p => ({prem: r10(p * 1.4), orig: r10(p * 1.9)});  // примерные цены по умолчанию
+function S(list){ return list.map(([name, price, note]) => ({id: uid(), name, name_he: SVC_HE[name] || '', price, note: note || '', note_he: SVC_HE[note] || '', tiers: name === SCREEN ? screenTiers(price) : {prem: 0, orig: 0}})); }
 
 function defaults(){
   const brands = [
@@ -401,7 +416,8 @@ function normalize(d){
     m.id = m.id || uid();
     m.services = (m.services || []).map(s => ({
       id: s.id || uid(), name: String(s.name || ''), name_he: s.name_he || SVC_HE[s.name] || '',
-      price: Number(s.price) || 0, note: s.note || '', note_he: s.note_he || SVC_HE[s.note] || ''
+      price: Number(s.price) || 0, note: s.note || '', note_he: s.note_he || SVC_HE[s.note] || '',
+      tiers: s.tiers ? {prem: Number(s.tiers.prem) || 0, orig: Number(s.tiers.orig) || 0} : (s.name === SCREEN ? screenTiers(Number(s.price) || 0) : {prem: 0, orig: 0})
     }));
   });
 }
@@ -424,7 +440,7 @@ function setAuth(tok){ auth = tok; ls.set(KEY + '-token', tok); if (!tok) st.edi
 let lang = params.get('lang') === 'he' || params.get('lang') === 'ru' ? params.get('lang') : (ls.get(KEY + '-lang') || 'ru');
 if (!L[lang]) lang = 'ru';
 if (IS_WEB) auth = ls.get(KEY + '-token') || '';
-const st = { brand: db.brands[0]?.id, model: null, q: '', picked: new Set(), discount: 0, editing: !isPublic() && ls.get(KEY + '-edit') === '1' };
+const st = { brand: db.brands[0]?.id, model: null, q: '', picked: new Set(), tier: {}, discount: 0, editing: !isPublic() && ls.get(KEY + '-edit') === '1' };
 
 /* ================= УТИЛИТЫ ================= */
 const $ = s => document.querySelector(s);
@@ -498,8 +514,17 @@ function renderGrid(){
     </button>`).join('') + extra;
 }
 
+// Варианты качества услуги: обычное (основная цена), премиум, оригинальное
+function tiersOf(s){
+  const list = [['std', s.price]];
+  if (s.tiers?.prem > 0) list.push(['prem', s.tiers.prem]);
+  if (s.tiers?.orig > 0) list.push(['orig', s.tiers.orig]);
+  return list;
+}
+function curTier(s){ const l = tiersOf(s); return l.find(x => x[0] === st.tier[s.id]) || l[0]; }
+const svcPrice = s => Number(curTier(s)[1]) || 0;
 function totals(m){
-  const sum = m.services.filter(s => st.picked.has(s.id)).reduce((a, s) => a + Number(s.price || 0), 0);
+  const sum = m.services.filter(s => st.picked.has(s.id)).reduce((a, s) => a + svcPrice(s), 0);
   const d = Math.min(100, Math.max(0, Number(st.discount) || 0));
   return {sum, d, final: Math.round(sum * (100 - d) / 100)};
 }
@@ -521,8 +546,8 @@ function renderDetail(){
       ${m.services.length ? m.services.map(s => `
         <div class="svc ${st.picked.has(s.id) ? 'on' : ''}" data-svc="${s.id}">
           <span class="chk">${I.check}</span>
-          <span class="n">${esc(svcName(s))}${svcNote(s) ? `<small>${esc(svcNote(s))}</small>` : ''}</span>
-          <span class="p">${money(s.price)}</span>
+          <span class="n">${esc(svcName(s))}${svcNote(s) ? `<small>${esc(svcNote(s))}</small>` : ''}${tiersOf(s).length > 1 ? `<span class="tiers">${tiersOf(s).map(([k, v]) => `<button class="tier ${curTier(s)[0] === k ? 'on' : ''}" data-tier="${k}" data-tsvc="${s.id}">${t('tier_' + k)}<small>${money(v)}</small></button>`).join('')}</span>` : ''}</span>
+          <span class="p">${money(svcPrice(s))}</span>
           <span class="acts edit-only"><button class="mini" data-edsvc="${s.id}" title="${t('edit')}">${I.edit}</button><button class="mini del" data-delsvc="${s.id}" title="${t('del')}">${I.del}</button></span>
         </div>`).join('') : `<div class="empty">${t('no_svc')}${st.editing || isPublic() ? '' : '<br>' + t('hint_editor')}</div>`}
     </div>
@@ -581,13 +606,18 @@ function svcForm(m, s){
   const nHe = field(`${t('note_he')} (${t('optional')})`, `<input name="note_he" dir="rtl" value="${s ? esc(s.note_he || '') : ''}">`);
   modal(`<form><h4>${s ? t('edit_svc') : t('new_svc')}</h4>
     ${ru ? fRu + fHe : fHe + fRu}
-    ${field(t('price'), `<input name="price" type="number" min="0" step="1" required value="${s ? s.price : ''}">`)}
+    <div class="row3">
+      ${field(t('price_std'), `<input name="price" type="number" min="0" step="1" required value="${s ? s.price : ''}">`)}
+      ${field(t('price_prem'), `<input name="prem" type="number" min="0" step="1" value="${s && s.tiers?.prem ? s.tiers.prem : ''}">`)}
+      ${field(t('price_orig'), `<input name="orig" type="number" min="0" step="1" value="${s && s.tiers?.orig ? s.tiers.orig : ''}">`)}
+    </div>
+    <div class="hint">${t('tiers_hint')}</div>
     <div class="row2">${ru ? nRu + nHe : nHe + nRu}</div>
     ${!s ? `<div class="field"><label class="chkline"><input type="checkbox" name="all"> ${esc(t('add_all', brandName(m.brandId)))}</label></div>` : ''}
     ${btns(s ? t('save') : t('add'))}</form>`, d => {
       const name = d.name.trim(), name_he = d.name_he.trim();
       if (!name && !name_he) return false;
-      const data = {name: name || name_he, name_he, price: Math.max(0, Number(d.price) || 0), note: d.note.trim(), note_he: d.note_he.trim()};
+      const data = {name: name || name_he, name_he, price: Math.max(0, Number(d.price) || 0), note: d.note.trim(), note_he: d.note_he.trim(), tiers: {prem: Math.max(0, Number(d.prem) || 0), orig: Math.max(0, Number(d.orig) || 0)}};
       if (s) Object.assign(s, data);
       else (d.all ? db.models.filter(x => x.brandId === m.brandId) : [m]).forEach(x => x.services.push({id: uid(), ...data}));
       save(); renderDetail(); toast(t('saved'));
@@ -631,7 +661,7 @@ $('#grid').onclick = e => {
     });
   }
   const el = e.target.closest('[data-model]'); if (!el) return;
-  if (st.model !== el.dataset.model) { st.model = el.dataset.model; st.picked.clear(); st.discount = 0; }
+  if (st.model !== el.dataset.model) { st.model = el.dataset.model; st.picked.clear(); st.tier = {}; st.discount = 0; }
   renderGrid(); renderDetail();
   if (window.innerWidth <= 900) $('#detail').scrollIntoView({behavior: 'smooth'});
 };
@@ -651,7 +681,8 @@ $('#detail').addEventListener('click', e => {
       m.services = m.services.filter(x => x !== s); st.picked.delete(s.id); save(); renderDetail();
     });
   }
-  if (e.target.closest('#clearPick')) { st.picked.clear(); st.discount = 0; return renderDetail(); }
+  if (e.target.closest('#clearPick')) { st.picked.clear(); st.tier = {}; st.discount = 0; return renderDetail(); }
+  if (el = e.target.closest('[data-tier]')) { st.tier[el.dataset.tsvc] = el.dataset.tier; st.picked.add(el.dataset.tsvc); return renderDetail(); }
   if (e.target.closest('#copyQuote')) return copyQuote(m);
   if (e.target.closest('#printQuote')) return window.print();
   if (e.target.closest('#disc')) return;
@@ -663,7 +694,7 @@ function copyQuote(m){
   const sel = m.services.filter(s => st.picked.has(s.id));
   if (!sel.length) return toast(t('pick_first'));
   const {d, final} = totals(m);
-  let txt = `${shopName()}\n${brandName(m.brandId)} ${m.name}\n\n` + sel.map(s => `• ${svcName(s)} — ${money(s.price)}`).join('\n');
+  let txt = `${shopName()}\n${brandName(m.brandId)} ${m.name}\n\n` + sel.map(s => `• ${svcName(s)}${tiersOf(s).length > 1 ? ' (' + t('tier_' + curTier(s)[0]) + ')' : ''} — ${money(svcPrice(s))}`).join('\n');
   if (d) txt += `\n\n${t('discount_line')}${d}%`;
   txt += `\n${t('total_line')}${money(final)}`;
   const done = () => toast(t('copied'));
