@@ -1,5 +1,5 @@
 #!/bin/bash
-# Сервис Мастер — установка сайта с редактированием по паролю на Ubuntu.
+# Emobile — установка сайта с редактированием по паролю на Ubuntu.
 # Запуск:  sudo bash servis-setup.sh
 set -e
 DOMAIN="servismaster.duckdns.org"   # домен сайта (пусто — без домена и https)

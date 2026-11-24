@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Сервис Мастер — калькулятор ремонта</title>
+<title>Emobile — калькулятор ремонта</title>
 <style>
 :root{
-  --bg:#f3f5fa; --card:#fff; --line:#e6e9f2; --text:#141a2b; --muted:#6b7389;
-  --blue:#2350e6; --blue-soft:#eaf0ff; --green:#119c55; --green-dark:#0c8146;
-  --red:#e0384c; --dark:#121726; --radius:16px;
+  --bg:#f3f7f4; --card:#fff; --line:#e6e9f2; --text:#141a2b; --muted:#6b7389;
+  --blue:#15924a; --blue-soft:#e9f7ef; --green:#15924a; --green-dark:#0f7a3c;
+  --red:#e0384c; --dark:#0f2318; --radius:16px;
   --shadow:0 1px 2px rgba(20,26,43,.04),0 6px 24px rgba(20,26,43,.06);
 }
 *{box-sizing:border-box}
@@ -23,7 +23,7 @@ svg{width:18px;height:18px;flex:none}
 /* header */
 header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
 .head{display:flex;align-items:center;gap:12px;padding:14px 20px;max-width:1240px;margin:0 auto}
-.logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#3a66ff,#1a3fd0);display:grid;place-items:center;color:#fff;box-shadow:0 4px 12px rgba(35,80,230,.35);flex:none}
+.logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#22c55e,#11803f);display:grid;place-items:center;color:#fff;box-shadow:0 4px 12px rgba(21,146,74,.35);flex:none}
 .logo svg{width:24px;height:24px}
 .brandname{min-width:0}
 .brandname b{font-size:19px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -37,7 +37,7 @@ header{background:var(--card);border-bottom:1px solid var(--line);position:stick
 .btn-edit{background:#fff;border:1.5px solid var(--line);color:var(--muted)}
 .btn-edit.on{background:#fff4e8;border-color:#f6c08a;color:#c4610a}
 .btn-lang{background:#fff;border:1.5px solid var(--line);padding:9px 14px}
-.btn-lang:hover{border-color:#c9d2ea}
+.btn-lang:hover{border-color:#bfe3cc}
 .icon-btn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;border:1px solid var(--line);background:#fff;color:var(--muted)}
 .icon-btn:hover{color:var(--text);background:var(--bg)}
 .edit-only{display:none!important}
@@ -53,8 +53,8 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;padding:22p
 .search:focus-within{border-color:var(--blue);background:#fff}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
 .tab{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:12px;background:#fff;border:1px solid var(--line);font-weight:600;color:#3b4358}
-.tab:hover{border-color:#c9d2ea}
-.tab.active{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 4px 12px rgba(35,80,230,.3)}
+.tab:hover{border-color:#bfe3cc}
+.tab.active{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 4px 12px rgba(21,146,74,.3)}
 .tab .cnt{font-size:12px;opacity:.65;font-weight:500}
 .tab-add{border-style:dashed;color:var(--blue)}
 .models{padding:18px}
@@ -64,7 +64,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;padding:22p
 .pill{margin-inline-start:auto;background:var(--bg);border-radius:20px;padding:4px 12px;font-size:12.5px;font-weight:600;color:var(--muted)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .model{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:#fff;text-align:start;transition:.15s}
-.model:hover{border-color:#b9c6ef;transform:translateY(-1px)}
+.model:hover{border-color:#a7d9b9;transform:translateY(-1px)}
 .model.active{border-color:var(--blue);background:var(--blue-soft)}
 .model .ph{width:36px;height:36px;border-radius:10px;background:var(--bg);display:grid;place-items:center;color:var(--muted)}
 .model.active .ph{background:var(--blue);color:#fff}
@@ -92,8 +92,8 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;padding:22p
 .link svg{width:15px;height:15px}
 .services{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto;padding-inline-end:2px}
 .svc{display:flex;align-items:center;gap:12px;padding:12px;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;user-select:none;transition:.12s}
-.svc:hover{border-color:#c9d2ea}
-.svc.on{border-color:var(--green);background:#ecf9f1}
+.svc:hover{border-color:#bfe3cc}
+.svc.on{border-color:var(--green);background:#e9f7ef}
 .chk{width:22px;height:22px;border-radius:7px;border:2px solid #c3cad9;display:grid;place-items:center;flex:none;transition:.12s;background:#fff}
 .svc.on .chk{background:var(--green);border-color:var(--green);color:#fff}
 .chk svg{width:14px;height:14px;opacity:0}
@@ -105,7 +105,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;padding:22p
 .total{margin-top:18px;background:var(--dark);color:#fff;border-radius:14px;padding:16px 18px}
 .total .r1{display:flex;align-items:center;font-size:13px;color:#a4adc4}
 .total .r1 .sp{flex:1}
-.total .r1 button{color:#8fb0ff;text-decoration:underline;font-size:13px}
+.total .r1 button{color:#86efac;text-decoration:underline;font-size:13px}
 .total .r2{display:flex;align-items:baseline;gap:10px;margin-top:8px}
 .total .r2 .lbl{flex:1;color:#d7dcea}
 .total .sum{font-size:32px;font-weight:800;color:#33d17a;white-space:nowrap}
@@ -113,7 +113,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;padding:22p
 .disc{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:#a4adc4}
 .disc input{width:70px;background:#232a3d;border:1px solid #343c53;border-radius:8px;color:#fff;padding:5px 8px;text-align:center}
 .disc .sp{flex:1}
-.copy{color:#8fb0ff;display:inline-flex;align-items:center;gap:5px}
+.copy{color:#86efac;display:inline-flex;align-items:center;gap:5px}
 .copy svg{width:15px;height:15px}
 .placeholder{text-align:center;color:var(--muted);padding:50px 20px}
 .placeholder svg{width:52px;height:52px;opacity:.35;display:block;margin:0 auto 12px}
@@ -172,7 +172,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;padding:22p
 <header>
   <div class="head">
     <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
-    <div class="brandname"><b id="shopName">Сервис Мастер</b><span data-i18n="subtitle">Прайс-лист и калькулятор ремонта</span></div>
+    <div class="brandname"><b id="shopName">Emobile</b><span data-i18n="subtitle">Прайс-лист и калькулятор ремонта</span></div>
     <div class="sp"></div>
     <button class="btn btn-lang" id="langBtn" title="Язык / שפה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span id="langLbl">עברית</span></button>
     <button class="icon-btn" id="loginBtn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>
@@ -368,7 +368,7 @@ function defaults(){
       ['Защитное стекло + установка', 50]
     ])});
   }
-  return {shopName:'Сервис Мастер', shopName_he:'סרוויס מאסטר', brands, models};
+  return {shopName:'Emobile', shopName_he:'Emobile', brands, models};
 }
 
 /* ================= РЕЖИМ И ХРАНЕНИЕ ================= */
@@ -395,8 +395,8 @@ if (!valid(db)) db = valid(EMBED) ? JSON.parse(JSON.stringify(EMBED)) : defaults
 normalize(db);
 
 function normalize(d){
-  if (!d.shopName) d.shopName = 'Сервис Мастер';
-  if (d.shopName_he === undefined) d.shopName_he = d.shopName === 'Сервис Мастер' ? 'סרוויס מאסטר' : '';
+  if (!d.shopName || d.shopName === 'Сервис Мастер') d.shopName = 'Emobile';
+  if (d.shopName_he === undefined || d.shopName_he === 'סרוויס מאסטר') d.shopName_he = d.shopName === 'Emobile' ? 'Emobile' : '';
   d.models.forEach(m => {
     m.id = m.id || uid();
     m.services = (m.services || []).map(s => ({
@@ -434,7 +434,7 @@ const money = n => Number(n || 0).toLocaleString(lang === 'he' ? 'he-IL' : 'ru-R
 const brandName = id => db.brands.find(b => b.id === id)?.name || '';
 const svcName = s => lang === 'he' ? (s.name_he || s.name) : (s.name || s.name_he);
 const svcNote = s => lang === 'he' ? (s.note_he || s.note) : (s.note || s.note_he);
-const shopName = () => (lang === 'he' ? (db.shopName_he || db.shopName) : (db.shopName || db.shopName_he)) || 'Сервис Мастер';
+const shopName = () => (lang === 'he' ? (db.shopName_he || db.shopName) : (db.shopName || db.shopName_he)) || 'Emobile';
 let toastT;
 function toast(msg){ const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Сервис Мастер — маленький сервер для сохранения прайса.
+"""Emobile — маленький сервер для сохранения прайса.
 
 POST /api/login   {"password": "..."}      -> {"token": "..."}
 PUT  /api/prices  (Authorization: Bearer T) -> сохраняет прайс в prices.json
@@ -207,5 +207,5 @@ if __name__ == '__main__':
     os.makedirs(DATA, exist_ok=True)
     srv = ThreadingHTTPServer((a.host, a.port), H)
     srv.static = a.static
-    print('Сервис Мастер API на %s:%d' % (a.host, a.port), flush=True)
+    print('Emobile API на %s:%d' % (a.host, a.port), flush=True)
     srv.serve_forever()
