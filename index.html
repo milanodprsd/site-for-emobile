@@ -342,7 +342,7 @@ const I = {
 /* ================= ДАННЫЕ ПО УМОЛЧАНИЮ ================= */
 const uid = () => Math.random().toString(36).slice(2, 10);
 const SCREEN = 'Замена экрана (дисплей)';
-const DATA_VERSION = 2;  // увеличить, если нужно заменить прайс на сервере новым прайсом из этого файла
+const DATA_VERSION = 3;  // увеличить, если нужно заменить прайс на сервере новым прайсом из этого файла
 // Названия вариантов на иврите
 const VAR_HE = {'Обычное':'רגיל','Премиум':'פרימיום','Soft OLED':'Soft OLED','Оригинальное':'מקורי','С рамкой':'עם מסגרת','Без рамки':'בלי מסגרת','Обычный':'רגיל','Быстрая зарядка':'טעינה מהירה'};
 const r10 = n => Math.round(n / 10) * 10;
@@ -363,22 +363,25 @@ function defaults(){
     svc('Замена основной камеры', 0), svcN('Чистка после попадания влаги', 0, 'диагностика + ультразвуковая чистка'), svc('Защитное стекло + установка', 0)
   ];
 
-  // iPhone: экран — Премиум / Soft OLED / Оригинальное (по листу цен мастерской)
+  // iPhone: экран — Обычное / Премиум / Soft OLED / Оригинальное (по листу цен мастерской)
+  // [модель, обычное, премиум, оригинальное]
   const apple = [
-    ['iPhone 11',300],['iPhone 11 Pro',300],['iPhone 11 Pro Max',300],['iPhone 12 / 12 Pro',400],['iPhone 12 Pro Max',450],
-    ['iPhone 13',400],['iPhone 13 Pro',550],['iPhone 13 Pro Max',550],['iPhone 14',450],['iPhone 14 Plus',450],
-    ['iPhone 14 Pro',600],['iPhone 14 Pro Max',650,1850],['iPhone 15',550],['iPhone 15 Plus',750],['iPhone 15 Pro',650],['iPhone 15 Pro Max',650,1600]
+    ['iPhone 7 / 8 / SE',200,300],['iPhone 7 Plus',200,300],['iPhone 8 Plus',250,350],
+    ['iPhone X',250,350],['iPhone XR',250,350],['iPhone XS',250,300],['iPhone XS Max',300,400],
+    ['iPhone 11',250,300],['iPhone 11 Pro',250,300],['iPhone 11 Pro Max',250,300],['iPhone 12 / 12 Pro',300,400],['iPhone 12 Pro Max',350,450],
+    ['iPhone 13',300,400],['iPhone 13 Pro',400,550],['iPhone 13 Pro Max',400,550],['iPhone 14',350,450],['iPhone 14 Plus',350,450],
+    ['iPhone 14 Pro',470,600],['iPhone 14 Pro Max',480,650,1850],['iPhone 15',400,550],['iPhone 15 Plus',500,750],['iPhone 15 Pro',500,650],['iPhone 15 Pro Max',500,650,1600]
   ];
-  for (const [name, prem, orig] of apple)
-    add('apple', name, [svc(SCREEN, prem, {variants: V(['Премиум', prem], ['Soft OLED', 0], ['Оригинальное', orig])}), ...rest()]);
+  for (const [name, reg, prem, orig] of apple)
+    add('apple', name, [svc(SCREEN, reg, {variants: V(['Обычное', reg], ['Премиум', prem], ['Soft OLED', 0], ['Оригинальное', orig])}), ...rest()]);
 
   // Samsung: экран; два числа на листе — без рамки / с рамкой. Разъём: обычный 250 / быстрая зарядка 350.
   const samsung = [
-    ['Galaxy A13',250],['Galaxy A14',280],['Galaxy A15',280],['Galaxy A16',270],['Galaxy A21s',250],
+    ['Galaxy A10',250],['Galaxy A11',250],['Galaxy A12',250],['Galaxy A13',250],['Galaxy A14',280],['Galaxy A15',280],['Galaxy A16',270],['Galaxy A21s',250],
     ['Galaxy A23',300,400],['Galaxy A24',300,400],['Galaxy A25',300,450],['Galaxy A30',400],['Galaxy A30s',350],
     ['Galaxy A31',450],['Galaxy A32',450],['Galaxy A33',450],['Galaxy A34',500],['Galaxy A35',470],
     ['Galaxy A50',400],['Galaxy A51',450],['Galaxy A52',450],['Galaxy A53',500],['Galaxy A54',500],['Galaxy A55',480,550],
-    ['Galaxy A70',500],['Galaxy A72',450],['Galaxy A73',500],
+    ['Galaxy A70',500],['Galaxy A72',450],['Galaxy A73',500],['Galaxy M54',500],['Galaxy M55',500],
     ['Galaxy Note 10+',1100],['Galaxy Note 20 Ultra',1000],
     ['Galaxy S10',800],['Galaxy S10+',900],['Galaxy S20',850],['Galaxy S20+',800,850],['Galaxy S20 Ultra',950],['Galaxy S20 FE',550],
     ['Galaxy S21',700],['Galaxy S21+',750],['Galaxy S21 Ultra',1000],['Galaxy S21 FE',600],
