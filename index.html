@@ -108,6 +108,10 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:20px;padding:22p
 .tier.on{border-color:var(--green);color:var(--green)}
 .svc.on .tier.on{background:var(--green);color:#fff}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.vrow{display:grid;grid-template-columns:minmax(0,1fr) 110px 34px;gap:8px;margin-bottom:8px;align-items:center}
+.vrow input{width:100%;padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;outline:none;background:#fff;min-width:0}
+.vrow input:focus{border-color:var(--blue)}
+.p.req{color:var(--muted);font-weight:600;font-size:13px}
 .hint{font-size:12.5px;color:var(--muted);margin:-6px 0 14px}
 .svc .acts{display:flex;gap:2px}
 .total{margin-top:18px;background:var(--dark);color:#fff;border-radius:14px;padding:16px 18px}
@@ -265,7 +269,7 @@ const L = {
   site_q:'Сайт для клиентов', site_t:'Скачается файл index.html с вашими текущими ценами. Загрузите его на хостинг вместо старого — клиенты увидят новые цены. У клиентов режим редактора скрыт.', site_b:'Скачать index.html', site_done:'Файл сайта скачан',
   login:'Вход для мастера', password:'Пароль', login_b:'Войти', login_ok:'Вы вошли. Изменения сразу видны клиентам', login_bad:'Неверный пароль', login_wait:'Слишком много попыток. Подождите 5 минут', no_server:'Нет связи с сервером',
   logout:'Выйти из редактора', logged_out:'Вы вышли', saved_web:'Сохранено на сайте ✓', push_fail:'Не удалось сохранить на сайте. Проверьте интернет', auth_lost:'Вход истёк, войдите снова',
-  tier_std:'Обычное', tier_prem:'Премиум', tier_orig:'Оригинальное',
+  on_request:'по запросу', price:'Цена, ₪', variants:'Варианты (например, качество экрана)', add_variant:'Добавить вариант', variant_ph:'Например, Премиум', variants_hint:'Если вариантов нет, действует цена выше. Цена 0 показывается клиентам как «по запросу».',
   price_std:'Цена (обычное), ₪', price_prem:'Премиум, ₪', price_orig:'Оригинальное, ₪', tiers_hint:'Премиум и оригинальное заполнять не обязательно. Если заполнить, клиент сможет выбрать качество.',
   foot:'Цены указаны в шекелях (₪). Точную стоимость уточняйте у мастера.'
  },
@@ -303,7 +307,7 @@ const L = {
   site_q:'אתר ללקוחות', site_t:'יורד קובץ index.html עם המחירים הנוכחיים. העלו אותו לאחסון במקום הישן, והלקוחות יראו את המחירים החדשים. מצב העריכה מוסתר אצל הלקוחות.', site_b:'הורדת index.html', site_done:'קובץ האתר הורד',
   login:'כניסת טכנאי', password:'סיסמה', login_b:'כניסה', login_ok:'נכנסתם. השינויים גלויים ללקוחות מיד', login_bad:'סיסמה שגויה', login_wait:'יותר מדי ניסיונות. המתינו 5 דקות', no_server:'אין חיבור לשרת',
   logout:'יציאה מהעריכה', logged_out:'יצאתם', saved_web:'נשמר באתר ✓', push_fail:'השמירה באתר נכשלה. בדקו את החיבור', auth_lost:'פג תוקף הכניסה, היכנסו שוב',
-  tier_std:'רגיל', tier_prem:'פרימיום', tier_orig:'מקורי',
+  on_request:'לפי בקשה', price:'מחיר, ₪', variants:'אפשרויות (למשל איכות מסך)', add_variant:'הוספת אפשרות', variant_ph:'למשל פרימיום', variants_hint:'אם אין אפשרויות, חל המחיר שלמעלה. מחיר 0 מוצג ללקוחות כ„לפי בקשה”.',
   price_std:'מחיר (רגיל), ₪', price_prem:'פרימיום, ₪', price_orig:'מקורי, ₪', tiers_hint:'פרימיום ומקורי אינם חובה. אם ימולאו, הלקוח יוכל לבחור איכות.',
   foot:'המחירים בשקלים (₪). את המחיר המדויק יש לברר מול הטכנאי.'
  }
@@ -338,28 +342,60 @@ const I = {
 /* ================= ДАННЫЕ ПО УМОЛЧАНИЮ ================= */
 const uid = () => Math.random().toString(36).slice(2, 10);
 const SCREEN = 'Замена экрана (дисплей)';
+const DATA_VERSION = 2;  // увеличить, если нужно заменить прайс на сервере новым прайсом из этого файла
+// Названия вариантов на иврите
+const VAR_HE = {'Обычное':'רגיל','Премиум':'פרימיום','Soft OLED':'Soft OLED','Оригинальное':'מקורי','С рамкой':'עם מסגרת','Без рамки':'בלי מסגרת','Обычный':'רגיל','Быстрая зарядка':'טעינה מהירה'};
 const r10 = n => Math.round(n / 10) * 10;
-const screenTiers = p => ({prem: r10(p * 1.4), orig: r10(p * 1.9)});  // примерные цены по умолчанию
-function S(list){ return list.map(([name, price, note]) => ({id: uid(), name, name_he: SVC_HE[name] || '', price, note: note || '', note_he: SVC_HE[note] || '', tiers: name === SCREEN ? screenTiers(price) : {prem: 0, orig: 0}})); }
+const V = (...pairs) => pairs.map(([name, price]) => ({name, price: price || 0}));
+const svc = (name, price, extra = {}) => ({id: uid(), name, name_he: SVC_HE[name] || '', price: price || 0, note: '', note_he: '', variants: [], ...extra});
+const svcN = (name, price, note) => ({...svc(name, price), note, note_he: SVC_HE[note] || ''});
 
 function defaults(){
   const brands = [
     {id:'apple',name:'Apple'},{id:'samsung',name:'Samsung'},{id:'xiaomi',name:'Xiaomi'},
     {id:'google',name:'Google Pixel'},{id:'huawei',name:'Huawei / Honor'}
   ];
+  const models = [];
+  const add = (brandId, name, services) => models.push({id: uid(), brandId, name, services});
+  // Прочие услуги без известной цены — «по запросу» (0)
+  const rest = (port = 0) => [
+    svc('Замена аккумулятора', 0), svc('Замена разъёма зарядки', port), svc('Замена заднего стекла', 0),
+    svc('Замена основной камеры', 0), svcN('Чистка после попадания влаги', 0, 'диагностика + ультразвуковая чистка'), svc('Защитное стекло + установка', 0)
+  ];
+
+  // iPhone: экран — Премиум / Soft OLED / Оригинальное (по листу цен мастерской)
+  const apple = [
+    ['iPhone 11',300],['iPhone 11 Pro',300],['iPhone 11 Pro Max',300],['iPhone 12 / 12 Pro',400],['iPhone 12 Pro Max',450],
+    ['iPhone 13',400],['iPhone 13 Pro',550],['iPhone 13 Pro Max',550],['iPhone 14',450],['iPhone 14 Plus',450],
+    ['iPhone 14 Pro',600],['iPhone 14 Pro Max',650,1850],['iPhone 15',550],['iPhone 15 Plus',750],['iPhone 15 Pro',650],['iPhone 15 Pro Max',650,1600]
+  ];
+  for (const [name, prem, orig] of apple)
+    add('apple', name, [svc(SCREEN, prem, {variants: V(['Премиум', prem], ['Soft OLED', 0], ['Оригинальное', orig])}), ...rest()]);
+
+  // Samsung: экран; два числа на листе — без рамки / с рамкой. Разъём: обычный 250 / быстрая зарядка 350.
+  const samsung = [
+    ['Galaxy A13',250],['Galaxy A14',280],['Galaxy A15',280],['Galaxy A16',270],['Galaxy A21s',250],
+    ['Galaxy A23',300,400],['Galaxy A24',300,400],['Galaxy A25',300,450],['Galaxy A30',400],['Galaxy A30s',350],
+    ['Galaxy A31',450],['Galaxy A32',450],['Galaxy A33',450],['Galaxy A34',500],['Galaxy A35',470],
+    ['Galaxy A50',400],['Galaxy A51',450],['Galaxy A52',450],['Galaxy A53',500],['Galaxy A54',500],['Galaxy A55',480,550],
+    ['Galaxy A70',500],['Galaxy A72',450],['Galaxy A73',500],
+    ['Galaxy Note 10+',1100],['Galaxy Note 20 Ultra',1000],
+    ['Galaxy S10',800],['Galaxy S10+',900],['Galaxy S20',850],['Galaxy S20+',800,850],['Galaxy S20 Ultra',950],['Galaxy S20 FE',550],
+    ['Galaxy S21',700],['Galaxy S21+',750],['Galaxy S21 Ultra',1000],['Galaxy S21 FE',600],
+    ['Galaxy S22',700],['Galaxy S22+',750],['Galaxy S22 Ultra',1150],
+    ['Galaxy S23',750],['Galaxy S23+',750,820],['Galaxy S23 Ultra',900,1100],['Galaxy S23 FE',550],
+    ['Galaxy S24',700,1000],['Galaxy S24+',850,1100],['Galaxy S24 Ultra',1000,1400],['Galaxy S24 FE',0],
+    ['Galaxy S25',0],['Galaxy S25+',0],['Galaxy S25 Ultra',0],['Galaxy S26',0],['Galaxy S26+',0],['Galaxy S26 Ultra',0]
+  ];
+  for (const [name, a, b] of samsung) {
+    const screen = b ? svc(SCREEN, a, {variants: V(['Без рамки', a], ['С рамкой', b])}) : svc(SCREEN, a);
+    const r = rest(250); r[1].variants = V(['Обычный', 250], ['Быстрая зарядка', 350]);
+    add('samsung', name, [screen, ...r]);
+  }
+
+  // Остальные бренды — примерные цены (поменяйте в редакторе)
   // [модель, экран, аккумулятор, разъём, заднее стекло, камера]
   const table = {
-    apple:[
-      ['iPhone 11',350,200,180,250,250],['iPhone 11 Pro',450,220,200,280,300],['iPhone 12',500,220,200,280,300],
-      ['iPhone 12 Pro Max',650,250,220,300,380],['iPhone 13',550,250,220,300,350],['iPhone 13 Pro',800,270,230,320,420],
-      ['iPhone 14',650,270,230,350,380],['iPhone 14 Pro Max',1100,300,250,400,500],['iPhone 15',800,300,250,400,420],
-      ['iPhone 15 Pro Max',1300,330,280,450,550],['iPhone 16',950,330,280,450,480],['iPhone 16 Pro Max',1500,350,300,500,600]
-    ],
-    samsung:[
-      ['Galaxy A14',250,160,130,120,150],['Galaxy A34',380,180,150,150,200],['Galaxy A54',450,200,160,180,220],
-      ['Galaxy A55',480,200,160,180,230],['Galaxy S22',500,220,180,220,300],['Galaxy S23',650,240,200,250,330],
-      ['Galaxy S23 Ultra',1000,280,220,300,450],['Galaxy S24',750,260,220,280,350],['Galaxy S24 Ultra',1200,300,250,350,500]
-    ],
     xiaomi:[
       ['Redmi 13C',200,140,110,100,120],['Redmi Note 12',300,160,130,120,160],['Redmi Note 13',320,170,140,130,170],
       ['Redmi Note 13 Pro',450,190,150,160,220],['Poco X6 Pro',450,190,150,160,220],['Xiaomi 13T',550,220,180,200,280],['Xiaomi 14',750,250,200,250,350]
@@ -371,19 +407,13 @@ function defaults(){
       ['Huawei P30',400,180,150,170,220],['Huawei P40',500,200,160,190,250],['Honor 90',450,190,150,170,230],['Honor X8',300,160,130,130,170]
     ]
   };
-  const models = [];
-  for (const b in table) for (const [name, scr, bat, port, back, cam] of table[b]) {
-    models.push({id: uid(), brandId: b, name, services: S([
-      ['Замена экрана (дисплей)', scr],
-      ['Замена аккумулятора', bat],
-      ['Замена разъёма зарядки', port],
-      ['Замена заднего стекла', back],
-      ['Замена основной камеры', cam],
-      ['Чистка после попадания влаги', 150, 'диагностика + ультразвуковая чистка'],
-      ['Защитное стекло + установка', 50]
-    ])});
-  }
-  return {shopName:'Emobile', shopName_he:'Emobile', brands, models};
+  for (const b in table) for (const [name, scr, bat, port, back, cam] of table[b])
+    add(b, name, [
+      svc(SCREEN, scr, {variants: V(['Обычное', scr], ['Премиум', r10(scr * 1.4)], ['Оригинальное', r10(scr * 1.9)])}),
+      svc('Замена аккумулятора', bat), svc('Замена разъёма зарядки', port), svc('Замена заднего стекла', back),
+      svc('Замена основной камеры', cam), svcN('Чистка после попадания влаги', 150, 'диагностика + ультразвуковая чистка'), svc('Защитное стекло + установка', 50)
+    ]);
+  return {shopName:'Emobile', shopName_he:'Emobile', dataVersion: DATA_VERSION, brands, models};
 }
 
 /* ================= РЕЖИМ И ХРАНЕНИЕ ================= */
@@ -404,12 +434,14 @@ let EMBED = null;
 try { EMBED = JSON.parse(document.getElementById('price-data').textContent); } catch(e) {}
 
 const valid = d => d && Array.isArray(d.brands) && Array.isArray(d.models);
+const fresh = d => valid(d) && (Number(d.dataVersion) || 1) >= DATA_VERSION;  // старый прайс заменяется новым из файла
 let db = null;
 if (!IS_WEB) { try { db = JSON.parse(ls.get(KEY)); } catch(e) {} }
-if (!valid(db)) db = valid(EMBED) ? JSON.parse(JSON.stringify(EMBED)) : defaults();
+if (!fresh(db)) db = fresh(EMBED) ? JSON.parse(JSON.stringify(EMBED)) : defaults();
 normalize(db);
 
 function normalize(d){
+  d.dataVersion = Number(d.dataVersion) || 1;
   if (!d.shopName || d.shopName === 'Сервис Мастер') d.shopName = 'Emobile';
   if (d.shopName_he === undefined || d.shopName_he === 'סרוויס מאסטר') d.shopName_he = d.shopName === 'Emobile' ? 'Emobile' : '';
   d.models.forEach(m => {
@@ -417,7 +449,8 @@ function normalize(d){
     m.services = (m.services || []).map(s => ({
       id: s.id || uid(), name: String(s.name || ''), name_he: s.name_he || SVC_HE[s.name] || '',
       price: Number(s.price) || 0, note: s.note || '', note_he: s.note_he || SVC_HE[s.note] || '',
-      tiers: s.tiers ? {prem: Number(s.tiers.prem) || 0, orig: Number(s.tiers.orig) || 0} : (s.name === SCREEN ? screenTiers(Number(s.price) || 0) : {prem: 0, orig: 0})
+      variants: Array.isArray(s.variants) ? s.variants.filter(v => v && v.name).map(v => ({name: String(v.name), price: Number(v.price) || 0}))
+        : (s.tiers && (s.tiers.prem || s.tiers.orig) ? V(['Обычное', Number(s.price) || 0], ['Премиум', Number(s.tiers.prem) || 0], ['Оригинальное', Number(s.tiers.orig) || 0]).filter(v => v.price) : [])
     }));
   });
 }
@@ -514,15 +547,12 @@ function renderGrid(){
     </button>`).join('') + extra;
 }
 
-// Варианты качества услуги: обычное (основная цена), премиум, оригинальное
-function tiersOf(s){
-  const list = [['std', s.price]];
-  if (s.tiers?.prem > 0) list.push(['prem', s.tiers.prem]);
-  if (s.tiers?.orig > 0) list.push(['orig', s.tiers.orig]);
-  return list;
-}
+// Варианты услуги (например, качество экрана): [индекс, название, цена]
+function tiersOf(s){ return s.variants?.length ? s.variants.map((v, i) => [String(i), v.name, v.price]) : [['0', '', s.price]]; }
 function curTier(s){ const l = tiersOf(s); return l.find(x => x[0] === st.tier[s.id]) || l[0]; }
-const svcPrice = s => Number(curTier(s)[1]) || 0;
+const svcPrice = s => Number(curTier(s)[2]) || 0;
+const varName = n => lang === 'he' ? (VAR_HE[n] || n) : n;
+const priceText = n => n > 0 ? money(n) : t('on_request');
 function totals(m){
   const sum = m.services.filter(s => st.picked.has(s.id)).reduce((a, s) => a + svcPrice(s), 0);
   const d = Math.min(100, Math.max(0, Number(st.discount) || 0));
@@ -546,8 +576,8 @@ function renderDetail(){
       ${m.services.length ? m.services.map(s => `
         <div class="svc ${st.picked.has(s.id) ? 'on' : ''}" data-svc="${s.id}">
           <span class="chk">${I.check}</span>
-          <span class="n">${esc(svcName(s))}${svcNote(s) ? `<small>${esc(svcNote(s))}</small>` : ''}${tiersOf(s).length > 1 ? `<span class="tiers">${tiersOf(s).map(([k, v]) => `<button class="tier ${curTier(s)[0] === k ? 'on' : ''}" data-tier="${k}" data-tsvc="${s.id}">${t('tier_' + k)}<small>${money(v)}</small></button>`).join('')}</span>` : ''}</span>
-          <span class="p">${money(svcPrice(s))}</span>
+          <span class="n">${esc(svcName(s))}${svcNote(s) ? `<small>${esc(svcNote(s))}</small>` : ''}${tiersOf(s).length > 1 ? `<span class="tiers">${tiersOf(s).map(([k, n, v]) => `<button class="tier ${curTier(s)[0] === k ? 'on' : ''}" data-tier="${k}" data-tsvc="${s.id}">${esc(varName(n))}<small>${priceText(v)}</small></button>`).join('')}</span>` : ''}</span>
+          <span class="p ${svcPrice(s) ? '' : 'req'}">${priceText(svcPrice(s))}</span>
           <span class="acts edit-only"><button class="mini" data-edsvc="${s.id}" title="${t('edit')}">${I.edit}</button><button class="mini del" data-delsvc="${s.id}" title="${t('del')}">${I.del}</button></span>
         </div>`).join('') : `<div class="empty">${t('no_svc')}${st.editing || isPublic() ? '' : '<br>' + t('hint_editor')}</div>`}
     </div>
@@ -606,23 +636,29 @@ function svcForm(m, s){
   const nHe = field(`${t('note_he')} (${t('optional')})`, `<input name="note_he" dir="rtl" value="${s ? esc(s.note_he || '') : ''}">`);
   modal(`<form><h4>${s ? t('edit_svc') : t('new_svc')}</h4>
     ${ru ? fRu + fHe : fHe + fRu}
-    <div class="row3">
-      ${field(t('price_std'), `<input name="price" type="number" min="0" step="1" required value="${s ? s.price : ''}">`)}
-      ${field(t('price_prem'), `<input name="prem" type="number" min="0" step="1" value="${s && s.tiers?.prem ? s.tiers.prem : ''}">`)}
-      ${field(t('price_orig'), `<input name="orig" type="number" min="0" step="1" value="${s && s.tiers?.orig ? s.tiers.orig : ''}">`)}
-    </div>
-    <div class="hint">${t('tiers_hint')}</div>
+    ${field(t('price'), `<input name="price" type="number" min="0" step="1" value="${s ? s.price : ''}" placeholder="0">`)}
+    <div class="field"><label>${t('variants')}</label><div id="vlist">${(s ? s.variants : []).map(vrow).join('')}</div>
+      <button type="button" class="link" id="vadd">${I.plus}${t('add_variant')}</button></div>
+    <datalist id="vnames">${Object.keys(VAR_HE).map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+    <div class="hint">${t('variants_hint')}</div>
     <div class="row2">${ru ? nRu + nHe : nHe + nRu}</div>
     ${!s ? `<div class="field"><label class="chkline"><input type="checkbox" name="all"> ${esc(t('add_all', brandName(m.brandId)))}</label></div>` : ''}
     ${btns(s ? t('save') : t('add'))}</form>`, d => {
       const name = d.name.trim(), name_he = d.name_he.trim();
       if (!name && !name_he) return false;
-      const data = {name: name || name_he, name_he, price: Math.max(0, Number(d.price) || 0), note: d.note.trim(), note_he: d.note_he.trim(), tiers: {prem: Math.max(0, Number(d.prem) || 0), orig: Math.max(0, Number(d.orig) || 0)}};
+      const f = $('#modal form');
+      const vn = [...f.querySelectorAll('[name=vname]')].map(i => i.value.trim()), vp = [...f.querySelectorAll('[name=vprice]')].map(i => Math.max(0, Number(i.value) || 0));
+      const variants = vn.map((n, i) => ({name: n, price: vp[i]})).filter(v => v.name);
+      const data = {name: name || name_he, name_he, price: variants.length ? variants[0].price : Math.max(0, Number(d.price) || 0), note: d.note.trim(), note_he: d.note_he.trim(), variants};
+      if (s) st.tier[s.id] = undefined;
       if (s) Object.assign(s, data);
       else (d.all ? db.models.filter(x => x.brandId === m.brandId) : [m]).forEach(x => x.services.push({id: uid(), ...data}));
       save(); renderDetail(); toast(t('saved'));
     });
+  $('#vadd').onclick = () => $('#vlist').insertAdjacentHTML('beforeend', vrow());
+  $('#vlist').onclick = e => { const b = e.target.closest('[data-vdel]'); if (b) b.closest('.vrow').remove(); };
 }
+const vrow = (v = {}) => `<div class="vrow"><input name="vname" list="vnames" value="${esc(v.name || '')}" placeholder="${t('variant_ph')}"><input name="vprice" type="number" min="0" step="1" value="${v.price || ''}" placeholder="₪"><button type="button" class="mini del" data-vdel>${I.del}</button></div>`;
 
 /* ================= СОБЫТИЯ ================= */
 $('#langBtn').onclick = () => { lang = lang === 'ru' ? 'he' : 'ru'; ls.set(KEY + '-lang', lang); render(); };
@@ -694,7 +730,7 @@ function copyQuote(m){
   const sel = m.services.filter(s => st.picked.has(s.id));
   if (!sel.length) return toast(t('pick_first'));
   const {d, final} = totals(m);
-  let txt = `${shopName()}\n${brandName(m.brandId)} ${m.name}\n\n` + sel.map(s => `• ${svcName(s)}${tiersOf(s).length > 1 ? ' (' + t('tier_' + curTier(s)[0]) + ')' : ''} — ${money(svcPrice(s))}`).join('\n');
+  let txt = `${shopName()}\n${brandName(m.brandId)} ${m.name}\n\n` + sel.map(s => `• ${svcName(s)}${s.variants?.length ? ' (' + varName(curTier(s)[1]) + ')' : ''} — ${priceText(svcPrice(s))}`).join('\n');
   if (d) txt += `\n\n${t('discount_line')}${d}%`;
   txt += `\n${t('total_line')}${money(final)}`;
   const done = () => toast(t('copied'));
@@ -751,7 +787,7 @@ $('#fileIn').onchange = e => {
     try {
       const d = JSON.parse(r.result);
       if (!valid(d)) throw 0;
-      normalize(d); db = d; st.brand = db.brands[0]?.id; st.model = null; st.picked.clear(); save(); render(); toast(t('imported'));
+      normalize(d); d.dataVersion = DATA_VERSION; db = d; st.brand = db.brands[0]?.id; st.model = null; st.picked.clear(); save(); render(); toast(t('imported'));
     } catch(err) { toast(t('bad_file')); }
   };
   r.readAsText(f); e.target.value = '';
@@ -762,7 +798,7 @@ render();
 // На сайте берём свежий прайс с сервера (его сохраняет мастер после входа)
 if (IS_WEB) {
   fetch('prices.json', {cache: 'no-store'}).then(r => r.ok ? r.json() : null).then(d => {
-    if (!valid(d)) return;
+    if (!fresh(d)) return;
     normalize(d); db = d;
     if (!db.brands.some(b => b.id === st.brand)) st.brand = db.brands[0]?.id;
     if (!db.models.some(m => m.id === st.model)) { st.model = null; st.picked.clear(); }
